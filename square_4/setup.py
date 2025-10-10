@@ -24,6 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'simple_motion = square4.simple_motion:main',
+            'simple_square_v1 = square4.simple_square_v1:main',
+            'coordinated_square_v1 = square4.coordinated_square_v1:main',
         ],
     },
 )
