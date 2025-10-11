@@ -1,3 +1,15 @@
+#PDCP Multi robot systems
+# code to control a robot to perfrom specific hardcoded motions
+#       motion 1: rotate 90 degress and advance 0.5m
+#       motion 2: rotate -90 degress and advance 0.5m
+#       *special consideration: when cahnging from motion 1 to motion 2 or viceversa
+#                                the rotation is multiplied *2 to make a 180 degrees turn
+# To run this code is needed
+# + launch turtlebot
+# + use this line in the terminal: "ros2 run square_4 simple_square_v1 --ros-args -p namespace:=robotX"
+#   * replace the namespace to the used one
+# Last update: 10/oct/2025
+
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
@@ -98,6 +110,9 @@ def main(args=None):
     rclpy.init(args=args)
     node = SimpleSquareV1()
 
+    #Bonjour
+    node.get_logger().info('Hola!! SimpleSquareV1')
+
     # Wait for odometry
     node.get_logger().info('Waiting for odometry...')
     while rclpy.ok() and node.position is None:
@@ -116,11 +131,11 @@ def main(args=None):
         else:
             print("Invalid input. Use 1 or 2.")
 
+    #BYE BYE BYE 
+    node.get_logger().info('\n\tBYEEE SimpleSquareV1')
+
     node.destroy_node()
     rclpy.shutdown()
-
-    
-
 
 
 if __name__ == '__main__':
