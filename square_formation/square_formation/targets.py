@@ -5,7 +5,7 @@
 #       motion 2: 1->4  4->3  3->2  2->1
 # To run this code is needed
 # + launch turtlebots 
-# + use this line in the terminal: "ros2 run square_fromation targets --ros-args -p namespaces:="[tb3_0, tb3_1, tb3_2, tb3_3]"
+# + use this line in the terminal: "ros2 run square_formation targets --ros-args -p namespaces:="[aire1, agua2, tierra3, fuego4]""
 #   * replace the namespace to the used ones
 # Last update: 15/oct/2025
 
@@ -16,36 +16,41 @@ from nav_msgs.msg import Odometry
 from math import sqrt, pi
 import tf_transformations
 from std_msgs.msg import String
+import threading
 
+
+from rclpy.parameter import Parameter
 
 class Targets(Node):
     def __init__(self):
         super().__init__('Targets')
 
-        # Declare parameter for namespaces (comma-separated)
-        self.declare_parameter('namespaces', [])
-        ns_list = self.get_parameter('namespaces').get_parameter_value().string_array_value
+        # Declare parameter as string (not empty list)
+        self.declare_parameter('namespaces', '')
 
-        if not ns_list:
-            self.get_logger().error("No namespaces provided! Please pass parameter 'namespaces'")
+        param_value = self.get_parameter('namespaces').get_parameter_value().string_value
+        if not param_value:
+            self.get_logger().error(
+                "No namespaces provided! Please pass parameter 'namespaces'")
             rclpy.shutdown()
             return
 
-        self.namespaces = ns_list
+        # Split comma-separated string into list
+        self.namespaces = [s.strip() for s in param_value.split(',') if s.strip()]
 
-        # Create a subscription for each robot
-        for ns in ns_list:
+        # Create subscriptions
+        for ns in self.namespaces:
             topic = f'/{ns}/odom'
-            self.create_subscription(Odometry, topic, lambda msg, ns=ns: self.odom_callback(msg, ns), 10)
+            self.create_subscription(
+                Odometry, topic, lambda msg, ns=ns: self.odom_callback(msg, ns), 10)
             self.get_logger().info(f'Subscribed to {topic}')
 
         self.pos_pub = self.create_publisher(String, 'all_positions', 10)
-
         self.positions = {}
         self.yaws = {}
 
-
         self.get_logger().info(f'Targets node started for namespaces: {self.namespaces}')
+
 
     def odom_callback(self, msg, ns):
         self.positions[ns] = msg.pose.pose.position
@@ -93,12 +98,14 @@ def main(args=None):
     node = Targets()
 
     #Bonjour
-    node.get_logger().info('Hola!! targets')
+    node.get_logger().info('\n\n\tHola!! targets\n')
 
-    # Wait for odometry
-    node.get_logger().info('Waiting for odometry...')
-    while rclpy.ok() and not node.positions:
+    node.get_logger().info('Waiting for all odometry...')
+    while rclpy.ok() and not all(ns in node.positions for ns in node.namespaces):
         rclpy.spin_once(node)
+
+    # Start spinning in background
+    threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
 
     node.get_logger().info('Ready for input: type "1" or "2"')
 
@@ -115,11 +122,10 @@ def main(args=None):
 
 
     #BYE BYE BYE 
-    node.get_logger().info('\n\tBYEEE targets')
+    node.get_logger().info('\n\n\tBYEEE targets\n')
 
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
