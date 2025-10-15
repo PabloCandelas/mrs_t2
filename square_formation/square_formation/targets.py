@@ -5,7 +5,7 @@
 #       motion 2: 1->4  4->3  3->2  2->1
 # To run this code is needed
 # + launch turtlebots 
-# + use this line in the terminal: "ros2 run square_formation targets --ros-args -p namespaces:="[aire1, agua2, tierra3, fuego4]""
+# + use this line in the terminal: "ros2 run square_formation targets --ros-args -p namespaces:=aire1,agua2,tierra3,fuego4"
 #   * replace the namespace to the used ones
 # Last update: 15/oct/2025
 
