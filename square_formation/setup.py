@@ -12,7 +12,8 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), ['launch/formation_setup.launch.py']),
-        ('share/' + package_name + '/action', ['square_formation/action/MoveTo.action']),
+        (os.path.join('share', package_name, 'action'), ['square_formation/action/MoveTo.action'])
+
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -28,6 +29,8 @@ setup(
     entry_points={
         'console_scripts': [
             'targets = square_formation.targets:main',
+            'move_to_server = square_formation.move_to_server:main',
+            'move_to_client = square_formation.move_to_client:main',
         ],
     },
 )
