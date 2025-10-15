@@ -21,9 +21,9 @@ ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom tierra3/odom
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom fuego4/odom"""
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
-from launch_ros.actions import Node, IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, ExecuteProcess, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
 
