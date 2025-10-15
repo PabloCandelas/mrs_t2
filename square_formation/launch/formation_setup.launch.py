@@ -1,3 +1,8 @@
+#PDCP Multi robot systems
+# launch file to send all the lines in the next comment section
+# + use this line in the terminal: "ros2 launch square_formation formation_setup.launch.py"
+# Last update: 15/oct/2025
+
 """#Create Gazebo world
 ros2 launch multi_turtlebot_sim standalone_world.launch.py
 
