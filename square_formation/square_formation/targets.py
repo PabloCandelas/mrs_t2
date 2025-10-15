@@ -45,7 +45,7 @@ class Targets(Node):
         self.yaws = {}
 
 
-    self.get_logger().info(f'Targets node started for namespaces: {self.namespaces}')
+        self.get_logger().info(f'Targets node started for namespaces: {self.namespaces}')
 
     def odom_callback(self, msg, ns):
         self.positions[ns] = msg.pose.pose.position
