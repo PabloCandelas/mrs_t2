@@ -1,9 +1,10 @@
 #PDCP Multi robot systems
 # launch file to send all the lines in the next comment section
 # + use this line in the terminal: "ros2 launch square_formation formation_setup.launch.py"
-# Last update: 15/oct/2025
+# Last update: 16/oct/2025
 
-"""#Create Gazebo world
+"""
+#Create Gazebo world
 ros2 launch multi_turtlebot_sim standalone_world.launch.py
 
 #Define turtlebot model as burger
@@ -18,10 +19,23 @@ ros2 launch multi_turtlebot_sim spawn_turtlebot3.launch.py robot_prefix:=fuego4 
 #connect odoms
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom agua2/odom
 ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom tierra3/odom
-ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom fuego4/odom"""
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 aire1/odom fuego4/odom
+
+#launch actions of Move.To servers
+ros2 run square_formation move_to_server --ros-args -p namespace:=aire1
+ros2 run square_formation move_to_server --ros-args -p namespace:=agua2
+ros2 run square_formation move_to_server --ros-args -p namespace:=tierra3
+ros2 run square_formation move_to_server --ros-args -p namespace:=fuego4
+
+#launch actions of Move.To clients
+ros2 run square_formation move_to_client --ros-args -p namespace:=aire1
+ros2 run square_formation move_to_client --ros-args -p namespace:=agua2
+ros2 run square_formation move_to_client --ros-args -p namespace:=tierra3
+ros2 run square_formation move_to_client --ros-args -p namespace:=fuego4
+"""
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, ExecuteProcess, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -29,7 +43,7 @@ import os
 
 
 def generate_launch_description():
-    # --- Environment variable for TurtleBot3 model ---
+    # --- Set TurtleBot3 model ---
     set_tb3_model = SetEnvironmentVariable(name='TURTLEBOT3_MODEL', value='burger')
 
     # --- Launch Gazebo world ---
@@ -43,7 +57,7 @@ def generate_launch_description():
         )
     )
 
-    # --- Spawn four turtlebots with different prefixes and poses ---
+    # --- Spawn 4 robots with namespaces and poses ---
     spawn_launch_path = os.path.join(
         get_package_share_directory('multi_turtlebot_sim'),
         'launch',
@@ -57,18 +71,17 @@ def generate_launch_description():
         {'name': 'fuego4',  'x': '0.5',  'y': '-0.5'},
     ]
 
-    spawn_robots = []
-    for robot in robots:
-        spawn_robots.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(spawn_launch_path),
-                launch_arguments={
-                    'robot_prefix': robot['name'],
-                    'x_pose': robot['x'],
-                    'y_pose': robot['y']
-                }.items()
-            )
+    spawn_robots = [
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(spawn_launch_path),
+            launch_arguments={
+                'robot_prefix': robot['name'],
+                'x_pose': robot['x'],
+                'y_pose': robot['y']
+            }.items()
         )
+        for robot in robots
+    ]
 
     # --- Static TF publishers to connect odoms ---
     tf_publishers = [
@@ -92,16 +105,29 @@ def generate_launch_description():
         ),
     ]
 
-    # --- Targets node (your multi-robot node) ---
-    targets_node = Node(
-        package='square_formation',
-        executable='targets',
-        name='multi_targets',
-        output='screen',
-        parameters=[{
-            'namespaces': ['aire1', 'agua2', 'tierra3', 'fuego4']
-        }]
-    )
+    # --- MoveTo action servers (one per robot) ---
+    move_to_servers = [
+        Node(
+            package='square_formation',
+            executable='move_to_server',
+            name=f'{robot["name"]}_move_server',
+            output='screen',
+            parameters=[{'namespace': robot['name']}]
+        )
+        for robot in robots
+    ]
+
+    # --- MoveTo action clients (one per robot) ---
+    move_to_clients = [
+        Node(
+            package='square_formation',
+            executable='move_to_client',
+            name=f'{robot["name"]}_move_client',
+            output='screen',
+            parameters=[{'namespace': robot['name']}]
+        )
+        for robot in robots
+    ]
 
     # --- Combine everything ---
     return LaunchDescription([
@@ -109,5 +135,6 @@ def generate_launch_description():
         world_launch,
         *spawn_robots,
         *tf_publishers,
-        targets_node
+        *move_to_servers,
+        *move_to_clients
     ])
