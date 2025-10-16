@@ -31,6 +31,7 @@ setup(
             'targets = square_formation.targets:main',
             'move_to_server = square_formation.move_to_server:main',
             'move_to_client = square_formation.move_to_client:main',
+            'coordinator = square_formation.coordinator:main',
         ],
     },
 )
