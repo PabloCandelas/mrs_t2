@@ -7,7 +7,7 @@
 # + launch turtlebots 
 # + use this line in the terminal: "ros2 run square_formation targets --ros-args -p namespaces:=aire1,agua2,tierra3,fuego4"
 #   * replace the namespace to the used ones
-# Last update: 15/oct/2025
+# Last update: 16/oct/2025
 
 #!/usr/bin/env python3
 import rclpy
@@ -77,13 +77,18 @@ class Targets(Node):
 
         # Build output string in the chosen order
         data_lines = []
-        for ns in ns_order:
+        # For each robot, publish its position as the target for the **next robot in order**
+        for i, ns in enumerate(ns_order):
+            target_ns = ns_order[(i + 1) % len(ns_order)]  # circular assignment
             if ns in self.positions:
                 p = self.positions[ns]
                 yaw = self.yaws.get(ns, 0.0)
-                data_lines.append(f"{ns}: x={p.x:.2f}, y={p.y:.2f}, yaw={yaw:.2f}")
+                data_lines.append(
+                    f"source_ns:{ns}, target_ns:{target_ns}, x:{p.x:.2f}, y:{p.y:.2f}, yaw:{yaw:.2f}"
+                )
             else:
-                data_lines.append(f"{ns}: no data yet")
+                data_lines.append(f"source_ns:{ns}, target_ns:{target_ns}, no data yet")
+
 
         msg = String()
         msg.data = "\n".join(data_lines)
@@ -114,9 +119,9 @@ def main(args=None):
         if key.lower() == 'q':
             break
         elif key == "1":
-            node.publisher(order=[1, 2, 3, 0])
+            node.publisher(order=[0,1, 2, 3])
         elif key == "2":
-            node.publisher(order=[0, 3, 2, 1])
+            node.publisher(order=[3, 2, 1,0])
         else:
             print("Invalid input. Use 1, 2, or q.")
 
