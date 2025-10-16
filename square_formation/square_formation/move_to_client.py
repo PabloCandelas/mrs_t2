@@ -17,7 +17,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import Pose2D
-from square_formation.action import MoveTo
+from square_formation_interfaces.action import MoveTo
 
 class MoveToClient(Node):
     def __init__(self):

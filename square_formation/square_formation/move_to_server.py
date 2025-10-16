@@ -16,9 +16,10 @@ from rclpy.node import Node
 from rclpy.action import ActionServer
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from square_formation.action import MoveTo
+from square_formation_interfaces.action import MoveTo
 import tf_transformations
-from math import atan2, sqrt
+from math import atan2, sqrt, pi
+import time
 
 class MoveToServer(Node):
     def __init__(self):
@@ -70,18 +71,24 @@ class MoveToServer(Node):
 
         feedback_msg = MoveTo.Feedback()
 
-        rate = self.create_rate(10)  # 10 Hz loop
-
         while rclpy.ok():
             if self.position is None:
-                rate.sleep()
+                time.sleep(0.1)
                 continue
 
-            # Compute distance and heading
+            # Handle cancellation
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                self.get_logger().info("Goal canceled")
+                return MoveTo.Result()
+
             dx = goal.x - self.position.x
             dy = goal.y - self.position.y
             distance = sqrt(dx**2 + dy**2)
             angle_to_goal = atan2(dy, dx)
+
+            # Wrap angle difference
+            angle_diff = self.normalize_angle(angle_to_goal - self.yaw)
 
             # Feedback
             feedback_msg.current_x = self.position.x
@@ -89,27 +96,33 @@ class MoveToServer(Node):
             feedback_msg.distance_to_goal = distance
             goal_handle.publish_feedback(feedback_msg)
 
-            if distance < 0.05:  # close enough
+            if distance < 0.05:
                 break
 
-            # Simple proportional controller
+            # P controller
             cmd = Twist()
-            cmd.linear.x = min(0.2 * distance, 0.3)  # max speed 0.3 m/s
-            cmd.angular.z = 2.0 * (angle_to_goal - self.yaw)
+            cmd.linear.x = min(0.2 * distance, 0.3)
+            cmd.angular.z = max(min(2.0 * angle_diff, 1.0), -1.0)
             self.cmd_pub.publish(cmd)
 
-            rate.sleep()
+            time.sleep(0.1)
 
-        # Stop the robot
+        # Stop robot
         self.cmd_pub.publish(Twist())
 
-        # Set result
+        # Result
         result = MoveTo.Result()
         result.success = True
         result.message = "Goal reached"
         goal_handle.succeed()
         return result
-
+    
+    def normalize_angle(self,angle):
+        while angle > pi:
+            angle -= 2.0 * pi
+        while angle < -pi:
+            angle += 2.0 * pi
+        return angle
 
 def main(args=None):
     rclpy.init(args=args)

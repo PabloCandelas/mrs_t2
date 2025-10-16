@@ -2,10 +2,11 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose2D, PointStamped
+from geometry_msgs.msg import Pose2D
 from tf2_ros import Buffer, TransformListener
 import tf_transformations
 import re
+import math  # <-- Use Python math for trig functions
 
 
 class Coordinator(Node):
@@ -19,7 +20,7 @@ class Coordinator(Node):
         # Subscribe to the positions topic
         self.sub = self.create_subscription(String, 'all_positions', self.positions_callback, 10)
 
-        self.publishers = {}
+        self.my_publishers = {}
         self.get_logger().info('Coordinator node started. Waiting for /tf transforms...')
 
     def positions_callback(self, msg):
@@ -74,8 +75,9 @@ class Coordinator(Node):
         q = transform.transform.rotation
         _, _, yaw = tf_transformations.euler_from_quaternion([q.x, q.y, q.z, q.w])
 
-        x_new = x * tf_transformations.cos(yaw) - y * tf_transformations.sin(yaw) + tx
-        y_new = x * tf_transformations.sin(yaw) + y * tf_transformations.cos(yaw) + ty
+        # Use math.cos and math.sin instead of tf_transformations
+        x_new = x * math.cos(yaw) - y * math.sin(yaw) + tx
+        y_new = x * math.sin(yaw) + y * math.cos(yaw) + ty
         return x_new, y_new
 
     def yaw_from_quaternion(self, q):
@@ -87,8 +89,8 @@ class Coordinator(Node):
         """Publish the transformed target pose to the target robot."""
         topic_name = f'/{target_ns}/move_to_topic'
 
-        if target_ns not in self.publishers:
-            self.publishers[target_ns] = self.create_publisher(Pose2D, topic_name, 10)
+        if target_ns not in self.my_publishers:
+            self.my_publishers[target_ns] = self.create_publisher(Pose2D, topic_name, 10)
             self.get_logger().info(f"Created publisher for {topic_name}")
 
         pose_msg = Pose2D()
@@ -96,7 +98,7 @@ class Coordinator(Node):
         pose_msg.y = y
         pose_msg.theta = yaw
 
-        self.publishers[target_ns].publish(pose_msg)
+        self.my_publishers[target_ns].publish(pose_msg)
         self.get_logger().info(
             f"Sent transformed goal to {target_ns}: x={x:.2f}, y={y:.2f}, yaw={yaw:.2f}"
         )
