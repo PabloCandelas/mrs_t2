@@ -1,0 +1,15 @@
+# MoveTo.action
+
+# Goal: the target coordinates
+float64 x
+float64 y
+float64 yaw
+---
+# Result: success flag and message
+bool success
+string message
+---
+# Feedback: current position and distance remaining
+float64 current_x
+float64 current_y
+float64 distance_to_goal
