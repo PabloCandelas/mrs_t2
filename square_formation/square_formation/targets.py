@@ -119,9 +119,9 @@ def main(args=None):
         if key.lower() == 'q':
             break
         elif key == "1":
-            node.publisher(order=[0,1, 2, 3])
+            node.publisher(order=[0,1, 2])
         elif key == "2":
-            node.publisher(order=[3, 2, 1,0])
+            node.publisher(order=[2, 1,0])
         else:
             print("Invalid input. Use 1, 2, or q.")
 

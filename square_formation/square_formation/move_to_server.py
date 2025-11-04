@@ -101,6 +101,7 @@ class MoveToServer(Node):
 
             # Stop condition for rotation
             if abs(angle_diff) < 0.05:  # ~3 degrees
+                print("aligned_1")
                 break
 
             # Rotate in place
@@ -114,7 +115,7 @@ class MoveToServer(Node):
         self.cmd_pub.publish(Twist())
         time.sleep(0.2)
 
-        # === Phase 2: Move toward goal while adjusting heading ===
+        # Phase 2: Move toward goal while adjusting heading
         while rclpy.ok():
             if self.position is None:
                 time.sleep(0.1)
@@ -122,7 +123,6 @@ class MoveToServer(Node):
 
             if goal_handle.is_cancel_requested:
                 goal_handle.canceled()
-                self.get_logger().info("Goal canceled during movement")
                 return MoveTo.Result()
 
             dx = goal.x - self.position.x
@@ -141,10 +141,16 @@ class MoveToServer(Node):
             if distance < 0.05:
                 break
 
-            # Move forward with small heading correction
+            # Move forward with heading correction
             cmd = Twist()
-            cmd.linear.x = min(0.25 * distance, 0.25)
-            cmd.angular.z = max(min(1.0 * angle_diff, 0.4), -0.4)
+            
+            # Reduce linear speed if angle_diff is large
+            if abs(angle_diff) > 0.2:  # ~11 degrees
+                cmd.linear.x = 0.05  # small forward to avoid standing still
+            else:
+                cmd.linear.x = max(min(0.25 * distance, 0.5), 0.15)
+
+            cmd.angular.z = max(min(1.5 * angle_diff, 0.6), -0.6)
             self.cmd_pub.publish(cmd)
 
             time.sleep(dt)

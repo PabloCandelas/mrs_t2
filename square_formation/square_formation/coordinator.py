@@ -46,21 +46,33 @@ class Coordinator(Node):
             target_frame = f"{target_ns}/odom"
 
             try:
-                # Try to get the transform from source to target
-                transform = self.tf_buffer.lookup_transform(
-                    target_frame,
+                # Step 1: source -> map
+                t_source_map = self.tf_buffer.lookup_transform(
+                    'map',
                     source_frame,
                     rclpy.time.Time(),
                     timeout=rclpy.duration.Duration(seconds=0.5)
                 )
 
-                # Apply transform to the source point
-                transformed_x, transformed_y = self.apply_tf_transform(x, y, transform)
+                # Apply transform from source to map
+                x_map, y_map = self.apply_tf_transform(x, y, t_source_map)
+                yaw_map = yaw
 
-                # Apply yaw rotation from transform as well
-                yaw_t = yaw + self.yaw_from_quaternion(transform.transform.rotation)
+                # Step 2: map -> target
+                t_map_target = self.tf_buffer.lookup_transform(
+                    target_frame,
+                    'map',
+                    rclpy.time.Time(),
+                    timeout=rclpy.duration.Duration(seconds=0.5)
+                )
 
+                # Apply transform from map to target frame
+                transformed_x, transformed_y = self.apply_tf_transform(x_map, y_map, t_map_target)
+                yaw_t = yaw_map 
+
+                # Publish final transformed target
                 self.publish_target(target_ns, transformed_x, transformed_y, yaw_t)
+
 
             except Exception as e:
                 self.get_logger().warn(
